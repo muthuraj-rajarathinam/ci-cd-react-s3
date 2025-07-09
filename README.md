@@ -1,70 +1,230 @@
-# Getting Started with Create React App
+# 🚀 React CI/CD Pipeline with GitHub Actions and AWS S3
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+I built a **CI/CD pipeline** that automatically builds and deploys a **React application** to **AWS S3** using **GitHub Actions**.
 
-## Available Scripts
+Every code push to the `main` branch triggers a workflow that:
 
-In the project directory, you can run:
+* Installs dependencies
+* Builds the React project
+* Syncs the build output to a public **S3 bucket** configured for **static website hosting**
 
-### `npm start`
+The pipeline securely uses **GitHub Secrets** for AWS credentials and region, ensuring automation with proper access control.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## ⚙️ Workflow Summary
 
-### `npm test`
+```txt
+✅ Install dependencies
+🛠️ Build React project
+☁️ Deploy to AWS S3 (static website)
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## 📦 Tech Stack
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+* ⚛️ **React** (via Create React App)
+* 🔁 **GitHub Actions** (CI/CD automation)
+* 🪣 **AWS S3** (static web hosting)
+* 🔐 **AWS IAM** (secure access)
+* 🧰 **AWS CLI** (inside GitHub Actions)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## ✅ Live Demo
 
-### `npm run eject`
+🌐 Your app will be live at:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```txt
+http://your-bucket-name.s3-website.ap-south-1.amazonaws.com
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 🛠️ Project Setup
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### 1. Create React App
 
-## Learn More
+```bash
+npx create-react-app my-app
+cd my-app
+git init
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+---
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### 2. Initialize Git & Push to GitHub
 
-### Code Splitting
+Create a new GitHub repository
+Example: `ci-cd-react-s3`
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+```bash
+git remote add origin https://github.com/yourusername/your-repo.git
+git branch -M main
+```
 
-### Analyzing the Bundle Size
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### 3. GitHub Actions Workflow Setup
 
-### Making a Progressive Web App
+Create workflow folder and file:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+```bash
+mkdir .github/workflows
+touch .github/workflows/deploy.yml
+```
 
-### Advanced Configuration
+Add the following to `deploy.yml`:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+```yaml
+name: Deploy React to S3
 
-### Deployment
+on:
+  push:
+    branches:
+      - main
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-### `npm run build` fails to minify
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy to S3
+        run: aws s3 sync build/ s3://${{ secrets.AWS_S3_BUCKET }} --delete
+```
+
+---
+
+## ☁️ AWS Setup
+
+### 4. Create a New S3 Bucket
+
+* Go to **AWS S3 Console**
+* Click **Create bucket**
+* Bucket name must be **globally unique**
+* **Uncheck** all **Block Public Access** options
+* Click **Create**
+
+---
+
+### 5. Enable Static Website Hosting
+
+* Go to your bucket → **Properties**
+* Scroll to **Static Website Hosting**
+* Enable it with:
+
+  * **Index document**: `index.html`
+  * **Error document**: `index.html`
+
+---
+
+### 6. Set Bucket Policy
+
+Go to **Permissions → Bucket Policy** and paste this:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PublicReadAccess",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": ["s3:GetObject"],
+      "Resource": [
+        "arn:aws:s3:::your-bucket-name",
+        "arn:aws:s3:::your-bucket-name/*"
+      ]
+    }
+  ]
+}
+```
+
+🔁 Replace `your-bucket-name` with your actual bucket name.
+
+---
+
+### 7. Create IAM User for GitHub
+
+* Go to **AWS IAM → Users → Create User**
+* Name: `github-deployer`
+* Access Type: **Programmatic Access**
+* Attach Policy: `AmazonS3FullAccess`
+* Save these:
+
+  * ✅ **AWS Access Key ID**
+  * ✅ **AWS Secret Access Key**
+
+---
+
+## 🔐 GitHub Secrets Setup
+
+In your GitHub repo:
+
+**Settings → Secrets and Variables → Actions → New Repository Secret**
+
+| Secret Name             | Value               |
+| ----------------------- | ------------------- |
+| `AWS_ACCESS_KEY_ID`     | Your IAM Access Key |
+| `AWS_SECRET_ACCESS_KEY` | Your IAM Secret Key |
+| `AWS_REGION`            | e.g., `ap-south-1`  |
+| `AWS_S3_BUCKET`         | Your Bucket Name    |
+
+---
+
+## 🚀 Trigger Test Deployment
+
+```bash
+git add .
+git commit -m "Initial commit"
+git push -u origin main
+```
+
+---
+
+## 🔍 How It Works
+
+1. Code is pushed to `main`
+2. GitHub Actions builds the React app
+3. AWS CLI uploads `build/` folder to S3
+4. S3 serves it as a public static website
+
+---
+
+## 📌 Notes
+
+* ✅ Bucket name **must be globally unique**
+* ✅ Ensure **Block Public Access** is disabled
+* 🔐 Always use **GitHub Secrets** for credentials
+* 🌐 Use `https://` for production URLs
+
+---
+
+## 🙋‍♂️ Author
+
+**Muthuraj Rajarathinam**
+💼 Passionate about DevOps, CI/CD, and scalable cloud apps
+[LinkedIn](https://www.linkedin.com/in/muthurajrajarathinam) | 
+[GitHub](https://github.com/muthuraj-rajarathinam)
