@@ -47,7 +47,7 @@ http://your-bucket-name.s3-website.ap-south-1.amazonaws.com
 ### 1. Create React App
 
 ```bash
-npx create-react-app my-app         # Creates a new React project using Facebook's boilerplate
+npx create-react-app my-app         # Creates a new React project 
 cd my-app                           # Enters the project directory
 git init                            # Initializes a Git repository to start version control &  connect to GitHub later.
 ```
